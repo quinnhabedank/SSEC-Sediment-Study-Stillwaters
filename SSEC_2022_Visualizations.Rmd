@@ -1,0 +1,100 @@
+---
+title: "Visualizations 2"
+author: "Quinn Habedank"
+date: "4/14/2022"
+output:
+  html_document:
+    df_print: paged
+  word_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(factoextra)
+library(ggtern)
+library(cowplot)
+```
+
+```{r}
+sediment_data <- readxl::read_xlsx("SK_Sediment Data_Grams_and_Percentages.xlsx")%>% 
+  mutate("Pebbles" =`%#5 (g) >4000µ`,
+         "Granules" = `%#10 (g) >2000µ`,
+         "Very Coarse/Coarse Sand" = `%#35 (g) >500µ`,
+         "Medium Sand " = `%#60 (g) >250µ`,
+         "Very Fine/Fine Sand" = `%#230 (g) >63µ`,
+         "Silt/Clay" = `% Silt (g) <63µ`)
+
+sediment_data_for_PCA <- sediment_data %>%
+  select(11:16)
+
+pca_results <- prcomp(sediment_data_for_PCA, scale=TRUE)
+```
+
+```{r}
+library(plyr)
+
+temp <- count(sediment_data, "Year")
+
+temp$Year <- temp$Year %>% as.character()
+
+group_s <- c(rep(temp$Year, times = temp$freq))
+
+x <- fviz_pca_biplot(pca_results, 
+                    repel=TRUE, 
+                    pointsize=2, 
+                    pointshape=18, 
+                    col.var="red", 
+                    arrowsize=0.25,  
+                    labelsize=3, 
+                    col.ind=group_s, 
+                    palette=c("green2", "black", "skyblue2", "red", "purple", "orange2"), 
+                    addEllipses=TRUE, 
+                    ellipse.type="confidence", 
+                    title = "PCA Biplot of Texture Proportions")+
+  theme_bw()
+
+
+
+x[["labels"]][["fill"]] <- "Year"
+
+x[["labels"]][["colour"]] <- "Year"
+
+print(x)
+```
+
+```{r}
+
+colors <- c("2011" = "#66ffff", "2012" = "#0000ff", "2014" = "black", "2016" = "#00db20", "2018" = "purple", "2021" = "orange")
+
+ggtern(data = sediment_data)+
+  aes(x = sediment_data$`Very Coarse/Coarse Sand`, y = sediment_data$`Medium Sand `, z = sediment_data$`Very Fine/Fine Sand`, color = factor(Year))+
+  geom_point()+
+  labs(title = "Tern plot of Sand Texture",  
+       subtitle = "Coarse/Very Coarse, Medium, and Very Fine/Fine Sand Percentages",
+       x = "Coarse %", xarrow="A long line 2 that goes on and on",
+       y = "Medium %", yarrow="A long line 0 that goes on and on",
+       z = "Fine %", zarrow="A long line 1 that goes on and on"
+  )+
+  scale_color_manual(values = colors, name = "Year") +
+  theme_cowplot()+
+  theme(axis.text = element_text(size = 10),
+        axis.title = element_text(size = 8)
+        )
+
+
+```
+
+
+
+
+
+
+
+
+
+
